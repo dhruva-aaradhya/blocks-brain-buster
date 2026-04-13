@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist } from 'next/font/google';
+import { Providers } from '@/contexts/Providers';
 import './globals.css';
 
 const geistSans = Geist({
@@ -17,6 +18,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -27,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${geistSans.variable} antialiased`}>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

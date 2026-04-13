@@ -22,6 +22,7 @@ import {
   computeHints,
   GRID_SIZE,
 } from '@/utils/gameLogic';
+import { logEvent } from '@/utils/analytics';
 import Board from './Board';
 import PieceTray from './PieceTray';
 import DragPiece from './DragPiece';
@@ -70,6 +71,7 @@ export default function Game({
   const [clearAnimation, setClearAnimation] = useState<ClearAnimation | null>(null);
 
   const boardRef = useRef<HTMLDivElement>(null);
+  const gameStartTime = useRef(Date.now());
   const [cellSize, setCellSize] = useState(40);
 
   useEffect(() => {
@@ -126,9 +128,19 @@ export default function Game({
 
       if (solved) {
         setPhase('won');
+        logEvent('session_puzzle_time', {
+          duration_seconds: Math.round((Date.now() - gameStartTime.current) / 1000),
+          won: true,
+          attempt: currentAttempt,
+        });
         onComplete(true, currentAttempt, newHistory);
       } else if (currentAttempt >= 6) {
         setPhase('lost');
+        logEvent('session_puzzle_time', {
+          duration_seconds: Math.round((Date.now() - gameStartTime.current) / 1000),
+          won: false,
+          attempt: currentAttempt,
+        });
         onComplete(false, currentAttempt, newHistory);
       } else {
         setHintOutlines(placementHints);
@@ -149,6 +161,12 @@ export default function Game({
       const newBoard = placePiece(board, piece.cells, row, col);
       const clearResult = checkAndClearLines(newBoard);
       const hasClear = clearResult.clearedRows.length > 0 || clearResult.clearedCols.length > 0;
+
+      logEvent('piece_placed', {
+        piece_index: pieceIndex,
+        attempt: currentAttempt,
+        lines_cleared: clearResult.clearedRows.length + clearResult.clearedCols.length,
+      });
 
       const newPlaced: [boolean, boolean, boolean] = [...placed];
       newPlaced[pieceIndex] = true;
@@ -382,6 +400,7 @@ export default function Game({
       setReviewingAttempt(attemptIndex);
       setBoard(cloneBoard(puzzle.board));
       setHintOutlines(attemptHistory[attemptIndex].placementHints);
+      logEvent('hint_review', { attempt_index: attemptIndex });
     },
     [attemptHistory, reviewingAttempt, phase, puzzle, currentPlacements]
   );
@@ -432,12 +451,17 @@ export default function Game({
   const totalSize = cellSize * GRID_SIZE;
 
   return (
-    <div className="flex flex-col items-center h-[100dvh] px-4 select-none overflow-hidden">
+    <div className="flex flex-col items-center h-[100dvh] px-4 select-none overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       {/* Top: back button */}
       <div className="shrink-0 pt-3 pb-1" style={{ width: totalSize }}>
         <button
-          onClick={onBack}
-          className="text-white/60 hover:text-white text-sm px-2 py-1"
+          onClick={() => {
+            if (phase === 'playing' || phase === 'reviewing') {
+              logEvent('abandon_game', { phase, attempt: currentAttempt });
+            }
+            onBack();
+          }}
+          className="text-white/60 hover:text-white active:text-white text-sm px-2 py-2 min-h-[44px]"
         >
           ← Back
         </button>

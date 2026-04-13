@@ -15,6 +15,8 @@ import {
 } from '@/utils/storage';
 import { todayDateStr, dateToSeed } from '@/utils/dailySeed';
 import { generateDailyPuzzle, generatePuzzle } from '@/utils/puzzleGenerator';
+import { logEvent, setScreen as setAnalyticsScreen } from '@/utils/analytics';
+import { fetchRemoteConfig } from '@/utils/remoteConfig';
 import Lobby from '@/components/Lobby';
 import Game from '@/components/Game';
 import DebugPanel from '@/components/DebugPanel';
@@ -33,6 +35,8 @@ export default function Home() {
   const seedRef = useRef(0);
 
   useEffect(() => {
+    fetchRemoteConfig();
+
     const today = todayDateStr();
     setLastSeen(today);
     cleanOldDailyStates(today);
@@ -49,6 +53,7 @@ export default function Home() {
       setDailyState(existingDaily);
       setPuzzle(existingDaily.puzzle);
       setScreen('lobby');
+      setAnalyticsScreen('lobby');
       return;
     }
 
@@ -67,6 +72,7 @@ export default function Home() {
       setDailyState(newDaily);
       setPuzzle(newPuzzle);
       setScreen('lobby');
+      setAnalyticsScreen('lobby');
     } catch {
       setError('Could not generate today\'s puzzle. Please refresh the page.');
       setScreen('lobby');
@@ -76,15 +82,26 @@ export default function Home() {
   const handlePlay = useCallback(() => {
     if (puzzle && dailyState && !dailyState.completed) {
       setScreen('game');
+      setAnalyticsScreen('game');
+      logEvent('game_start', {
+        puzzle_number: puzzle.puzzleNumber,
+        date: puzzle.date,
+      });
     }
   }, [puzzle, dailyState]);
 
   const handleBack = useCallback(() => {
     setScreen('lobby');
+    setAnalyticsScreen('lobby');
   }, []);
 
   const handleComplete = useCallback(
     (won: boolean, attempt: number, history: AttemptResult[]) => {
+      logEvent(won ? 'game_won' : 'game_lost', {
+        attempt_number: attempt,
+        puzzle_number: puzzle?.puzzleNumber ?? 0,
+        date: puzzle?.date ?? '',
+      });
       const today = todayDateStr();
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
@@ -111,6 +128,12 @@ export default function Home() {
 
   const handleAttemptEnd = useCallback(
     (history: AttemptResult[], nextAttempt: number) => {
+      const lastResult = history[history.length - 1];
+      logEvent('attempt_fail', {
+        attempt_number: nextAttempt - 1,
+        order_correct: lastResult?.orderCorrect ?? false,
+        placements_correct: lastResult?.placementHints.filter((h) => h.correct).length ?? 0,
+      });
       if (dailyState) {
         const updated: DailyState = {
           ...dailyState,
@@ -168,6 +191,8 @@ export default function Home() {
         setPuzzle(newPuzzle);
         setDebugSolutionStep(null);
         setScreen('game');
+        setAnalyticsScreen('game');
+        logEvent('practice_start', { seed: actualSeed });
         return;
       }
     }
@@ -276,10 +301,10 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {!debugMode && (
+      {!debugMode && process.env.NODE_ENV === 'development' && (
         <button
           onClick={() => setDebugMode(true)}
-          className="fixed bottom-2 right-2 z-50 bg-yellow-600/80 text-black text-xs font-bold px-2 py-1 rounded opacity-50 hover:opacity-100 transition-opacity"
+          className="fixed top-2 right-2 z-50 bg-yellow-600/80 text-black text-xs font-bold px-2 py-1 rounded opacity-50 active:opacity-100 transition-opacity"
         >
           DEBUG
         </button>

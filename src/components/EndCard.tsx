@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { Puzzle, AttemptResult } from '@/types/game';
+import { logEvent } from '@/utils/analytics';
 import { generateShareText, copyToClipboard } from './ShareCard';
 
 interface EndCardProps {
@@ -96,6 +97,11 @@ export default function EndCard({
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      logEvent('share_result', {
+        won,
+        attempt_number: currentAttempt,
+        puzzle_number: puzzle.puzzleNumber,
+      });
     }
   };
 
@@ -148,7 +154,7 @@ export default function EndCard({
 
           <button
             onClick={onBack}
-            className="w-full text-white/50 hover:text-white text-sm py-2"
+            className="w-full text-white/50 hover:text-white active:text-white text-sm py-3 min-h-[44px]"
           >
             Back to Lobby
           </button>

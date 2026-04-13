@@ -72,10 +72,11 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
   }
   body {
     @apply bg-background text-foreground;
-    background: url('/game-bg.png') center/cover no-repeat fixed;
     min-height: 100vh;
     min-height: 100dvh;
     overflow-x: hidden;
@@ -86,6 +87,15 @@
     overflow: hidden;
     height: 100%;
   }
+}
+
+/* Fixed background that works on iOS (background-attachment:fixed is broken in mobile Safari) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url('/game-bg.png') center/cover no-repeat;
 }
 
 @layer utilities {
