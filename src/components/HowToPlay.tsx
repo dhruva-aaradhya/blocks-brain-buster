@@ -21,8 +21,8 @@ export default function HowToPlay({ open, onOpenChange, trigger = true }: HowToP
       {trigger && (
         <DialogTrigger
           render={
-            <button className="flex items-center gap-1.5 text-white/60 hover:text-white text-sm transition">
-              <HelpCircle size={16} />
+            <button className="flex items-center gap-1.5 text-white/60 hover:text-white active:text-white text-sm py-2 min-h-[44px] transition">
+              <HelpCircle size={18} />
               How to Play
             </button>
           }

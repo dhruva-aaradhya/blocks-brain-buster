@@ -27,14 +27,14 @@ export default function AttemptDots({
           const isCurrent = attemptNum === currentAttempt && (phase === 'playing' || phase === 'clearing');
           const isReviewing = reviewingAttempt === i;
 
-          let dotClass = 'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ';
+          let dotClass = 'w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold transition-all ';
 
           if (isReviewing) {
             dotClass += 'bg-red-500 text-white ring-2 ring-white ring-offset-2 ring-offset-transparent shadow-[0_0_12px_rgba(255,255,255,0.5)]';
           } else if (result?.solved) {
             dotClass += 'bg-green-500 text-white';
           } else if (result) {
-            dotClass += 'bg-red-500/80 text-white cursor-pointer hover:scale-110';
+            dotClass += 'bg-red-500/80 text-white cursor-pointer active:scale-95';
           } else if (isCurrent) {
             dotClass += 'border-2 border-[#fdd835] text-[#fdd835] shadow-[0_0_8px_#fdd835aa]';
           } else {

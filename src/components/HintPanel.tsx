@@ -83,7 +83,7 @@ export default function HintPanel({ attemptResult, pieces, onNext }: HintPanelPr
 
       <button
         onClick={onNext}
-        className="text-white/50 hover:text-white text-xs py-0.5 transition"
+        className="text-white/50 hover:text-white active:text-white text-sm py-2 px-4 min-h-[44px] transition"
       >
         Next Attempt →
       </button>

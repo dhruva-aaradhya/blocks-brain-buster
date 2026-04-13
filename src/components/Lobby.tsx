@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Trophy, BarChart3 } from 'lucide-react';
 import type { PlayerStats, DailyState } from '@/types/game';
+import { logEvent } from '@/utils/analytics';
 import HowToPlay from './HowToPlay';
 import { generateShareText, copyToClipboard } from './ShareCard';
 
@@ -97,10 +98,14 @@ export default function Lobby({ stats, dailyState, onPlay, onSeedPlay }: LobbyPr
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      logEvent('share_result', {
+        won: dailyState.won,
+        attempt_number: dailyState.attemptHistory.length,
+        puzzle_number: dailyState.puzzleNumber,
+      });
     }
   };
 
-  // First time player
   useEffect(() => {
     if (stats.totalPlayed === 0) {
       setShowHowToPlay(true);
@@ -108,7 +113,7 @@ export default function Lobby({ stats, dailyState, onPlay, onSeedPlay }: LobbyPr
   }, [stats.totalPlayed]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[100dvh] px-6 py-8">
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] px-6 py-8 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -216,7 +221,7 @@ export default function Lobby({ stats, dailyState, onPlay, onSeedPlay }: LobbyPr
         >
           <button
             onClick={() => setShowPractice((p) => !p)}
-            className="text-white/40 hover:text-white/60 text-xs transition mx-auto block"
+            className="text-white/40 hover:text-white/60 active:text-white/60 text-sm py-2 min-h-[44px] transition mx-auto block"
           >
             {showPractice ? 'Hide practice mode' : 'Practice with a custom seed'}
           </button>
@@ -238,7 +243,7 @@ export default function Lobby({ stats, dailyState, onPlay, onSeedPlay }: LobbyPr
                   if (seedInput) onSeedPlay(parseInt(seedInput, 10));
                   else onSeedPlay(Math.floor(Math.random() * 999999));
                 }}
-                className="bg-white/10 hover:bg-white/20 text-white font-medium text-sm px-4 py-2 rounded-lg transition"
+                className="bg-white/10 hover:bg-white/20 active:bg-white/25 text-white font-medium text-sm px-4 py-2 min-h-[44px] rounded-lg transition"
               >
                 {seedInput ? 'Go' : 'Random'}
               </button>
@@ -249,7 +254,10 @@ export default function Lobby({ stats, dailyState, onPlay, onSeedPlay }: LobbyPr
 
       {/* How to Play */}
       <div className="mt-6">
-        <HowToPlay open={showHowToPlay} onOpenChange={setShowHowToPlay} />
+        <HowToPlay open={showHowToPlay} onOpenChange={(open) => {
+          setShowHowToPlay(open);
+          if (open) logEvent('how_to_play_viewed');
+        }} />
       </div>
     </div>
   );
